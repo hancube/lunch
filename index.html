@@ -60,7 +60,7 @@
 			text-shadow: 1px 1px 1px #faa300;
 			font-family: Arial;
 			color: #5c1d00;
-			padding: 7px 13px;
+			padding: 7px 12px;
 			border: solid #401400 1px;
 			text-decoration: none;
 			margin-right: 3px;
@@ -88,12 +88,6 @@
 		    margin-right: auto;
 		    width: 190px;
 		}
-		.step {
-			margin-bottom: 10px;
-		}
-		#step_names, #step_expenses, #step_tax, #step_tip, #step_result {
-			display: none;
-		}
 		li.line {
 			border-bottom: 1px dotted gray;
 		}
@@ -104,6 +98,7 @@
 			background-color: #f7f7f7;
 		}
 		.step {
+			display: none;
 			padding: 20px 15px;
 			margin: 10px;
 			background: #ff0030;
@@ -116,9 +111,10 @@
 			text-shadow: -1px -1px #aa3030;
 			font-weight: normal;
 		}
-		#count {
-			width: 55px;
+		.step#step_welcome {
+			display: block;
 		}
+
 		#buttons {
 			height: 33px;
 		}
@@ -138,10 +134,25 @@
 			tip_rate: 15
 		},
 		init : function() {
+	        $("#step_welcome #next").click(function (e) {
+				L._fn.swichStep();
+				L._fn.step_welcome.clickNext();
+	        });
+	        $("#step_welcome #go_venmo").click(function (e) {
+				L._fn.swichStep();
+				L._fn.step_welcome.goVenmo();
+	        });
+
+
 	        $("#step_count #next").click(function (e) {
 				L._fn.swichStep();
 				L._fn.step_count.clickNext();
 	        });
+	        $("#step_count #back").click(function (e) {
+				L._fn.swichStep();
+				L._fn.step_count.clickBack();
+	        });
+
 
 	        $("#step_names #next").click(function (e) {
 				L._fn.swichStep();
@@ -208,8 +219,24 @@
 			},
 			util: {
 				getRoundedNumber: function(num, point) {
-					var times = point * 10;
+					var times = 1;
+					for (var i=1; i<=point; i++){
+						times = times * 10;
+					}
 					return Math.round(num * times) / times;
+				}
+			},
+			step_welcome: {
+				clickNext : function() {
+		            L._fn.step_welcome.showNext();
+				},
+				showNext : function() {
+		            $("#step_welcome").hide();
+		            $("#step_count").show();
+				},
+				goVenmo : function() {
+		            $("#step_welcome").hide();
+		            $("#step_count").show();
 				}
 			},
 			step_count: {
@@ -222,6 +249,10 @@
 		            $('#step_count #input').prop('readonly', true);
 		            $("#step_count").hide();
 		            $("#step_names").show();
+				},
+				clickBack : function() {
+		            $("#step_count").hide();
+		            $("#step_welcome").show();
 				}
 			},
 			step_names: {
@@ -327,14 +358,14 @@
 				setTax : function () {
 					var expense_total = parseFloat($("#step_tax #expense_total").val());
 					var tax = expense_total * L.config.tax_rate / 100;
-					$("#step_tax #tax").val(tax);
+					$("#step_tax #tax").val(L._fn.util.getRoundedNumber(tax, 2));
 					return true;
 				},
 				setTaxTotal : function () {
 					var expense_total = parseFloat($("#step_tax #expense_total").val());
 					var tax = parseFloat($("#step_tax #tax").val());
 					var tax_total = expense_total + tax;
-					$("#step_tax #tax_total").val(tax_total);
+					$("#step_tax #tax_total").val(L._fn.util.getRoundedNumber(tax_total, 2));
 					return true;
 				},
 				changeTaxRate: function() {
@@ -464,18 +495,10 @@
 					}
 				},
 				divide : function() {
-					// extra tax
-					var expense_total = parseFloat($("#step_tax #expense_total").val());
-					var org_tax = L._fn.step_tax.getTax(expense_total);
-					var cur_tax = parseFloat($("#step_tax #tax").val());
-					var dif_tax = cur_tax - org_tax;
-					var added_tax_each = dif_tax / L.config.count;
-
 					// tip
 					var cur_tip = $("#step_tip #tip").val();
-					var tip_total = $("#step_tip #tip_total").val();
 					var tip_each = cur_tip / L.config.count;
-
+					
 					// each with tax
 					var total_each = 0;
 					var expense1, expense2, expense3;
@@ -496,18 +519,20 @@
 							total_each += parseFloat(expense3);
 						}
 						tax_each = L._fn.step_tax.getTax(total_each);
-						total_each = total_each + tax_each + added_tax_each + tip_each;
+						total_each = total_each + tax_each + tip_each;
 						total_each = L._fn.util.getRoundedNumber(total_each, 2);
 						$("#step_result #result"+i).val(total_each);
 						total_final += total_each;
 					}
-					var diff = tip_total - total_final;
-					if (diff >= 1) {
-						if (diff < L.config.count) {
+
+					var tip_total = $("#step_tip #tip_total").val();
+					var diff = L._fn.util.getRoundedNumber(tip_total - total_final, 2);
+					if (diff !== 0) {
+						if (diff < L.config.count * 0.01) {
 							var ran = 0;
-							for (var i=0; i<=L.config.count; i++) {
+							for (var i=0.01; i<=diff; i=i+0.01) {
 								ran = Math.floor((Math.random() * L.config.count) + 1);
-								$("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 1);
+								$("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 0.01);
 							}
 						}else {
 							alert('error');
@@ -532,10 +557,25 @@
 <body>
 <div class="bg">
 <div class="center">
+	<div id="step_welcome" class="step">
+		<h1>Welcome</h1>
+		<div>
+			Just Calculate!
+			<input type="button" value="Start" id="next" />
+		</div>
+		<div>
+			Start with Venmo!
+			<input type="button" value="Go Venmo" id="go_venmo" />
+		</div>
+	</div>
+	
 	<div id="step_count" class="step">
 		<h1>How Many People?</h1>
 		<input type="number" id="count" value="4" />
-		<input type="button" value="Go" id="next" />
+		<div id="buttons">
+			<input type="button" value="Back" id="back" />
+			<input type="button" value="Go" id="next" />
+		</div>
 	</div>
 
 	<div id="step_names" class="step">
