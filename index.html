@@ -254,15 +254,16 @@
                 },
                 setCount : function() {
                     $.cookie("COOKIE_COUNT", L.config.count);
+                    console.log("SET COOKIE_COUNT: " + L.config.count);
                 },
                 getCount : function() {
                     L.config.count = $.cookie("COOKIE_COUNT");
-                    console.log("COOKIE_COUNT: " + L.config.count);
+                    console.log("GET COOKIE_COUNT: " + L.config.count);
                     return true;
                 },
 				clickNext : function() {
-                    L._fn.step_count.setCount();
 					L.config.count = $("#step_count #count").val();
+                    L._fn.step_count.setCount();
 		            L._fn.step_names.init();
 		            L._fn.step_count.showNext();
 				},
@@ -306,6 +307,10 @@
                 },
                 getNames : function() {
                     var tmp = $.cookie("COOKIE_NAMES");
+                    if (tmp == undefined) {
+                    	return false;
+                    }
+
                     L.config.names = tmp.split(',');
                     console.log("GET COOKIE_NAMES:");
                     console.log(L.config.names);
