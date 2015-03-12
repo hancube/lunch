@@ -111,7 +111,7 @@
 			text-shadow: -1px -1px #aa3030;
 			font-weight: normal;
 		}
-		.step#step_welcome {
+		.step#step_count {
 			display: block;
 		}
 
@@ -125,94 +125,99 @@
 			padding-bottom: 6px;
 		}
 	</style>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
 	<script>
 	var L = {
 		config: {
-			count: 0,
+            count: 0,
+            names: [],
+            shared: 0,
 			tax_rate: 8.875,
 			tip_rate: 15
 		},
 		init : function() {
-	        $("#step_welcome #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_welcome.clickNext();
-	        });
-	        $("#step_welcome #go_venmo").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_welcome.goVenmo();
-	        });
-
-
-	        $("#step_count #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_count.clickNext();
-	        });
-	        $("#step_count #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_count.clickBack();
-	        });
-
-
-	        $("#step_names #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_names.clickNext();
-	        });
-	        $("#step_names #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_names.clickBack();
-	        });
-
-	        $("#step_expenses #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_expenses.clickNext();
-	        });
-	        $("#step_expenses #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_expenses.clickBack();
-	        });
-
-	        $("#step_tax #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_tax.clickNext();
-	        });
-	        $("#step_tax #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_tax.clickBack();
-	        });
-		        $("#step_tax #tax_rate").blur(function (e) {
-					L._fn.step_tax.changeTaxRate();
-		        });
-		        $("#step_tax #tax").blur(function (e) {
-					L._fn.step_tax.changeTax();
-		        });
-	        $("#step_tip #next").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_tip.clickNext();
-	        });
-	        $("#step_tip #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_tip.clickBack();
-	        });
-		        $("#step_tip #tip_rate").change(function (e) {
-					L._fn.step_tip.changeTipRate();
-		        });
-		        $("#step_tip #tip").blur(function (e) {
-					L._fn.step_tip.changeTip();
-		        });
-		        $("#step_tip #tip_total").blur(function (e) {
-					L._fn.step_tip.changeTipTotal();
-		        });
-	        $("#step_result #start_over").click(function (e) {
-				L._fn.swichStep();
-	            L._fn.step_result.clickNext();
-	        });
-	        $("#step_result #back").click(function (e) {
-				L._fn.swichStep();
-				L._fn.step_result.clickBack();
-	        });
-
+            L.event();
+            L._fn.step_count.init();
 		},
+        event : function() {
+            $("#step_welcome #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_welcome.clickNext();
+            });
+            $("#step_welcome #go_venmo").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_welcome.goVenmo();
+            });
+
+            $("#step_count #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_count.clickNext();
+            });
+            $("#step_count #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_count.clickBack();
+            });
+
+            $("#step_names #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_names.clickNext();
+            });
+            $("#step_names #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_names.clickBack();
+            });
+
+            $("#step_expenses #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_expenses.clickNext();
+            });
+            $("#step_expenses #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_expenses.clickBack();
+            });
+
+            $("#step_tax #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_tax.clickNext();
+            });
+            $("#step_tax #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_tax.clickBack();
+            });
+            $("#step_tax #tax_rate").blur(function (e) {
+                L._fn.step_tax.changeTaxRate();
+            });
+            $("#step_tax #tax").blur(function (e) {
+                L._fn.step_tax.changeTax();
+            });
+            $("#step_tip #next").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_tip.clickNext();
+            });
+            $("#step_tip #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_tip.clickBack();
+            });
+            $("#step_tip #tip_rate").change(function (e) {
+                L._fn.step_tip.changeTipRate();
+            });
+            $("#step_tip #tip").blur(function (e) {
+                L._fn.step_tip.changeTip();
+            });
+            $("#step_tip #tip_total").blur(function (e) {
+                L._fn.step_tip.changeTipTotal();
+            });
+            $("#step_result #start_over").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_result.clickNext();
+            });
+            $("#step_result #back").click(function (e) {
+                L._fn.swichStep();
+                L._fn.step_result.clickBack();
+            });
+        },
 		_fn : {
 			swichStep: function() {
 				window.scrollTo(0,0);
@@ -240,7 +245,23 @@
 				}
 			},
 			step_count: {
+                init: function() {
+                    L._fn.step_count.showCount();
+                },
+                showCount : function() {
+                    L._fn.step_count.getCount();
+                    $("#step_count #count").val(L.config.count);
+                },
+                setCount : function() {
+                    $.cookie("COOKIE_COUNT", L.config.count);
+                },
+                getCount : function() {
+                    L.config.count = $.cookie("COOKIE_COUNT");
+                    console.log("COOKIE_COUNT: " + L.config.count);
+                    return true;
+                },
 				clickNext : function() {
+                    L._fn.step_count.setCount();
 					L.config.count = $("#step_count #count").val();
 		            L._fn.step_names.init();
 		            L._fn.step_count.showNext();
@@ -258,22 +279,40 @@
 			step_names: {
 				init: function () {
 					L._fn.step_names.addNameInputs();
+                    L._fn.step_names.showNames();
 				},
 				addNameInputs : function() {
 					$("#step_names #names ul").remove();
 					$("#step_names #names").append("<ul></ul>");
-					for (var i = 1; i <= L.config.count; i++) {
-						switch (i) {
-							case 1: name = 'Marcin'; break;
-							case 2: name = 'Luka'; break;
-							case 3: name = 'Pawel'; break;
-							case 4: name = 'Sung'; break;
-							default: name = ''; break;
-						}
-						$('#step_names #names ul').append('<li><input type="text" id="name'+i+'" value="'+name+'" /></li>');
+                    for (var i = 1; i <= L.config.count; i++) {
+						$('#step_names #names ul').append('<li><input type="text" id="name'+i+'" value="" /></li>');
 					}
 				},
+                setNames : function() {
+                    L.config.names = [];
+                    $("#step_names #names ul li input[type=text]").each(function(index) {
+                        L.config.names[index] = $(this).val();
+                     });
+                    console.log("SET COOKIE_NAMES:");
+                    console.log(L.config.names);
+                    $.cookie("COOKIE_NAMES", L.config.names);
+                },
+                showNames : function() {
+                    L._fn.step_names.getNames();
+                    for (var i = 0; i < L.config.count; i++) {
+                        $("#step_names #names ul input[type=text]#name" + (i+1)).val(L.config.names[i]);
+                    }
+                    return true;
+                },
+                getNames : function() {
+                    var tmp = $.cookie("COOKIE_NAMES");
+                    L.config.names = tmp.split(',');
+                    console.log("GET COOKIE_NAMES:");
+                    console.log(L.config.names);
+                    return true;
+                },
 				clickNext : function() {
+                    L._fn.step_names.setNames();
 		            L._fn.step_expenses.init();
 		            L._fn.step_names.showNext();
 				},
@@ -301,7 +340,14 @@
 						li += '<li><input type="number" id="expense'+i+'_3" value="" placeholder="Price 3" /></li>';
 						$('#step_expenses ul').append(li);
 					}
-				},
+                    // Shared
+                    li = '<li><label>Shared</label></li>';
+                    li += '<li><input type="number" id="shared'+'_1" value="" placeholder="Price 1"/></li>';
+                    li += '<li><input type="number" id="shared'+'_2" value="" placeholder="Price 2" /></li>';
+                    li += '<li><input type="number" id="shared'+'_3" value="" placeholder="Price 3" /></li>';
+                    $('#step_expenses ul').append(li);
+
+                },
 				clickNext : function() {
 		            L._fn.step_tax.init();
 		            L._fn.step_expenses.showNext();
@@ -348,9 +394,25 @@
 							total += parseFloat(expense3);
 						}
 					}
+                    // Shared
+                    L.config.shared = 0;
+                    expense1 = $("#step_expenses #shared_1").val();
+                    if (expense1 !== undefined && expense1 !== '') {
+                        L.config.shared += parseFloat(expense1);
+                    }
+                    expense2 = $("#step_expenses #shared_2").val();
+                    if (expense2 !== undefined && expense2 !== '') {
+                        L.config.shared += parseFloat(expense2);
+                    }
+                    expense3 = $("#step_expenses #shared_3").val();
+                    if (expense3 !== undefined && expense3 !== '') {
+                        L.config.shared += parseFloat(expense3);
+                    }
+                    total += parseFloat(L.config.shared);
+
 					$("#step_tax #expense_total").val(L._fn.util.getRoundedNumber(total, 2));
 					return true;
-					},
+				},
 				getTax : function(money) {
 					var tax = money * L.config.tax_rate / 100;
 					return tax;
@@ -498,7 +560,7 @@
 					// tip
 					var cur_tip = $("#step_tip #tip").val();
 					var tip_each = cur_tip / L.config.count;
-					
+                    var shared_each = L.config.shared / L.config.count;
 					// each with tax
 					var total_each = 0;
 					var expense1, expense2, expense3;
@@ -518,6 +580,7 @@
 						if (expense3 !== undefined && expense3 !== '') {
 							total_each += parseFloat(expense3);
 						}
+                        total_each += shared_each;
 						tax_each = L._fn.step_tax.getTax(total_each);
 						total_each = total_each + tax_each + tip_each;
 						total_each = L._fn.util.getRoundedNumber(total_each, 2);
@@ -528,14 +591,21 @@
 					var tip_total = $("#step_tip #tip_total").val();
 					var diff = L._fn.util.getRoundedNumber(tip_total - total_final, 2);
 					if (diff !== 0) {
-						if (diff < L.config.count * 0.01) {
+						if (Math.abs(diff) < L.config.count * 0.01) {
 							var ran = 0;
-							for (var i=0.01; i<=diff; i=i+0.01) {
-								ran = Math.floor((Math.random() * L.config.count) + 1);
-								$("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 0.01);
-							}
+                            if (diff > 0) {
+                                for (var i=0.01; i<=diff; i=i+0.01) {
+                                    ran = Math.floor((Math.random() * L.config.count) + 1);
+                                    $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 0.01);
+                                }
+                            }else {
+                                for (var i=-0.01; i>=diff; i=i-0.01) {
+                                    ran = Math.floor((Math.random() * L.config.count) + 1);
+                                    $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) - 0.01);
+                                }
+                            }
 						}else {
-							alert('error');
+							alert('calculating error');
 						}
 					}
 				},
@@ -571,7 +641,7 @@
 	
 	<div id="step_count" class="step">
 		<h1>How Many People?</h1>
-		<input type="number" id="count" value="4" />
+		<input type="number" id="count" value="" />
 		<div id="buttons">
 			<input type="button" value="Back" id="back" />
 			<input type="button" value="Go" id="next" />
