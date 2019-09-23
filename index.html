@@ -30,6 +30,7 @@
         }
         label {
             display: block;
+            height: 23px;
         }
         input {
             font-size: 18px;
@@ -224,15 +225,6 @@
             swichStep: function() {
                 window.scrollTo(0,0);
             },
-            util: {
-                getRoundedNumber: function(num, point) {
-                    let times = 1;
-                    for (let i=1; i<=point; i++){
-                        times = times * 10;
-                    }
-                    return Math.round(num * times) / times;
-                }
-            },
             step_welcome: {
                 clickNext : function() {
                     L._fn.step_welcome.showNext();
@@ -296,11 +288,7 @@
                 setNames : function() {
                     L.config.names = [];
                     $("#step_names #names ul li input[type=text]").each(function(index) {
-                        let val = $(this).val().trim();
-                        if (val.length <= 0) {
-                            val = "No name";
-                        }
-                        L.config.names[index] = val;
+                        L.config.names[index] = $(this).val();
                      });
                     console.log("SET COOKIE_NAMES:");
                     console.log(L.config.names);
@@ -349,17 +337,17 @@
                     $("#step_expenses #expenses").append("<ul></ul>");
                     let li;
                     for (let i = 1; i <= L.config.count; i++) {
-                        li = '<li><label>'+L.config.names[i]+'</label></li>';
-                        li += '<li><input type="number" id="expense'+i+'_1" value="" placeholder="Price 1"/></li>';
-                        li += '<li><input type="number" id="expense'+i+'_2" value="" placeholder="Price 2" /></li>';
-                        li += '<li><input type="number" id="expense'+i+'_3" value="" placeholder="Price 3" /></li>';
+                        li = '<li><label>'+$('#step_names #name'+i).val()+'</label></li>';
+                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_1" value="" placeholder="Price 1"/></li>';
+                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_2" value="" placeholder="Price 2" /></li>';
+                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_3" value="" placeholder="Price 3" /></li>';
                         $('#step_expenses ul').append(li);
                     }
                     // Shared
                     li = '<li><label>Shared</label></li>';
-                    li += '<li><input type="number" id="shared'+'_1" value="" placeholder="Price 1"/></li>';
-                    li += '<li><input type="number" id="shared'+'_2" value="" placeholder="Price 2" /></li>';
-                    li += '<li><input type="number" id="shared'+'_3" value="" placeholder="Price 3" /></li>';
+                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_1" value="" placeholder="Price 1"/></li>';
+                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_2" value="" placeholder="Price 2" /></li>';
+                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_3" value="" placeholder="Price 3" /></li>';
                     $('#step_expenses ul').append(li);
 
                 },
@@ -425,7 +413,7 @@
                     }
                     total += parseFloat(L.config.shared);
 
-                    $("#step_tax #expense_total").val(L._fn.util.getRoundedNumber(total, 2));
+                    $("#step_tax #expense_total").val(total.toFixed(2));
                     return true;
                 },
                 getTax : function(money) {
@@ -435,14 +423,14 @@
                 setTax : function () {
                     let expense_total = parseFloat($("#step_tax #expense_total").val());
                     let tax = expense_total * L.config.tax_rate / 100;
-                    $("#step_tax #tax").val(L._fn.util.getRoundedNumber(tax, 2));
+                    $("#step_tax #tax").val(tax.toFixed(2));
                     return true;
                 },
                 setTaxTotal : function () {
                     let expense_total = parseFloat($("#step_tax #expense_total").val());
                     let tax = parseFloat($("#step_tax #tax").val());
                     let tax_total = expense_total + tax;
-                    $("#step_tax #tax_total").val(L._fn.util.getRoundedNumber(tax_total, 2));
+                    $("#step_tax #tax_total").val(tax_total.toFixed(2));
                     return true;
                 },
                 changeTaxRate: function() {
@@ -453,10 +441,12 @@
                     return true;
                 },
                 changeTax: function() {
-                    L._fn.step_tax.setTaxRateByTax();
-                    L._fn.step_tax.setTax();
-                    L._fn.step_tax.setTaxTotal();
-                    L._fn.step_expenses.showNext();
+                    if (parseFloat($("#step_tax #tax").val()) > 0) {
+                        L._fn.step_tax.setTaxRateByTax();
+                        L._fn.step_tax.setTax();
+                        L._fn.step_tax.setTaxTotal();
+                        L._fn.step_expenses.showNext();
+                    }
                     return true;
                 },
                 setTaxRateByTax: function() {
@@ -464,7 +454,7 @@
                     let tax = parseFloat($("#step_tax #tax").val());
                     let tax_rate = tax / expense_total;
                     tax_rate  = tax_rate * 100;
-                    L.config.tax_rate = tax_rate;
+                    L.config.tax_rate = tax_rate.toFixed(3);
                     L._fn.step_tax.setTaxRate();
                     return true;
                 },
@@ -490,28 +480,28 @@
                     return true;
                 },
                 setTipRate : function() {
-                    $("#step_tip #tip_rate").val(L._fn.util.getRoundedNumber(L.config.tip_rate, 2));
+                    $("#step_tip #tip_rate").val(L.config.tip_rate.toFixed(2));
                     return true;
                 },
                 setTipRateText : function() {
-                    $("#step_tip #tip_rate_text").text(L._fn.util.getRoundedNumber(L.config.tip_rate, 1));
+                    $("#step_tip #tip_rate_text").text(L.config.tip_rate.toFixed(1));
                     return true;
                 },
                 getTipRate : function() {
-                    L.config.tip_rate = L._fn.util.getRoundedNumber($("#step_tip #tip_rate").val(), 2);
+                    L.config.tip_rate = parseFloat($("#step_tip #tip_rate").val());
                     return true;
                 },
                 setTip : function () {
                     let tax_total = $("#step_tax #tax_total").val();
                     let tip = tax_total * L.config.tip_rate / 100;
-                    $("#step_tip #tip").val(L._fn.util.getRoundedNumber(tip, 2));
+                    $("#step_tip #tip").val(tip.toFixed(2));
                     return true;
                 },
                 setTipTotal : function () {
                     let tax_total = parseFloat($("#step_tax #tax_total").val());
                     let tip = parseFloat($("#step_tip #tip").val());
                     let tip_total = tax_total + tip;
-                    $("#step_tip #tip_total").val(L._fn.util.getRoundedNumber(tip_total, 2));
+                    $("#step_tip #tip_total").val(tip_total.toFixed(2));
                     return true;
                 },
                 changeTipRate: function() {
@@ -533,7 +523,7 @@
                 changeTipTotal: function() {
                     let tax_total = parseFloat($("#step_tax #tax_total").val());
                     let tip_total = parseFloat($("#step_tip #tip_total").val());
-                    $("#step_tip #tip").val(L._fn.util.getRoundedNumber(tip_total - tax_total, 2));
+                    $("#step_tip #tip").val((tip_total - tax_total).toFixed(2));
                     L._fn.step_tip.changeTip();
                     return true;
                 },
@@ -568,7 +558,7 @@
                     let name = '';
                     for (let i = 1; i <= L.config.count; i++) {
                         name = $("#step_names #name"+i).val();
-                        $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" id="result'+i+'" value="" /></li>');
+                        $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" step="0.01" min="0" id="result'+i+'" value="" /></li>');
                     }
                 },
                 divide : function() {
@@ -598,13 +588,13 @@
                         total_each += shared_each;
                         tax_each = L._fn.step_tax.getTax(total_each);
                         total_each = total_each + tax_each + tip_each;
-                        total_each = L._fn.util.getRoundedNumber(total_each, 2);
+                        total_each = total_each.toFixed(2);
                         $("#step_result #result"+i).val(total_each);
                         total_final += total_each;
                     }
 
                     let tip_total = $("#step_tip #tip_total").val();
-                    let diff = L._fn.util.getRoundedNumber(tip_total - total_final, 2);
+                    let diff = (tip_total - total_final).toFixed(2);
                     if (diff !== 0) {
                         if (Math.abs(diff) < L.config.count * 0.01) {
                             let ran = 0;
@@ -619,8 +609,6 @@
                                     $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) - 0.01);
                                 }
                             }
-                        }else {
-                            alert('calculating error');
                         }
                     }
                 },
@@ -656,7 +644,7 @@
     
     <div id="step_count" class="step">
         <h1>How Many People?</h1>
-        <input type="number" id="count" value="" />
+        <input type="number" min="0" id="count" value="" />
         <div id="buttons">
             <input type="button" value="Back" id="back" />
             <input type="button" value="Go" id="next" />
@@ -683,10 +671,10 @@
     <div id="step_tax" class="step">
         <h1>Tax</h1>
         <ul>
-            <li><label class="b">Total</label> <input type="number" id="expense_total" value="" class="r" readonly /></li>
-            <li><label>Tax Rate(<span id="tax_rate_text"></span>%)</label> <input type="number" id="tax_rate" value="" /></li>
-            <li><label>Tax</label> <input type="number" id="tax" value="" /></li>
-            <li><label class="b">Tax Total</label> <input type="number" id="tax_total" value="" class="r" readonly /></li>
+            <li><label class="b">Total</label> <input type="number" step="0.01" min="0" id="expense_total" value="" class="r" readonly /></li>
+            <li><label>Tax Rate(<span id="tax_rate_text"></span>%)</label> <input type="number" step="0.001" min="0" id="tax_rate" value="" /></li>
+            <li><label>Tax</label> <input type="number" step="0.01" min="0" id="tax" value="" /></li>
+            <li><label class="b">Tax Total</label> <input type="number" step="0.01" min="0" id="tax_total" value="" class="r" readonly /></li>
         </ul>
         <div id="buttons">
             <input type="button" value="Back" id="back" />
@@ -697,8 +685,8 @@
         <h1>Tip</h1>
         <ul>
             <li><label>Tip Rate(<span id="tip_rate_text"></span>%)</label> <input type="range" id="tip_rate" value="" min="0" max="30"/></li>
-            <li><label>Tip </label> <input type="number" id="tip" value="" /></li>
-            <li><label class="b">Tip Total</label> <input type="number" id="tip_total" value="" /></li>
+            <li><label>Tip </label> <input type="number" step="0.01" min="0" id="tip" value="" /></li>
+            <li><label class="b">Tip Total</label> <input type="number" step="0.01" min="0" id="tip_total" value="" /></li>
         </ul>
         <div id="buttons">
             <input type="button" value="Back" id="back" />
