@@ -129,7 +129,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
 
     <script>
-    var L = {
+    let L = {
         config: {
             count: 0,
             names: [],
@@ -226,8 +226,8 @@
             },
             util: {
                 getRoundedNumber: function(num, point) {
-                    var times = 1;
-                    for (var i=1; i<=point; i++){
+                    let times = 1;
+                    for (let i=1; i<=point; i++){
                         times = times * 10;
                     }
                     return Math.round(num * times) / times;
@@ -255,7 +255,7 @@
                     $("#step_count #count").val(L.config.count);
                 },
                 setCount : function() {
-                    var date = new Date();
+                    let date = new Date();
                     date.setTime(date.getTime() + (L.config.cookie_days * 24 * 60 * 60 * 1000));
                     $.cookie("COOKIE_COUNT", L.config.count, { expires: date });
                     console.log("SET COOKIE_COUNT: " + L.config.count);
@@ -289,30 +289,34 @@
                 addNameInputs : function() {
                     $("#step_names #names ul").remove();
                     $("#step_names #names").append("<ul></ul>");
-                    for (var i = 1; i <= L.config.count; i++) {
+                    for (let i = 1; i <= L.config.count; i++) {
                         $('#step_names #names ul').append('<li><input type="text" id="name'+i+'" value="" /></li>');
                     }
                 },
                 setNames : function() {
                     L.config.names = [];
                     $("#step_names #names ul li input[type=text]").each(function(index) {
-                        L.config.names[index] = $(this).val();
+                        let val = $(this).val().trim();
+                        if (val.length <= 0) {
+                            val = "No name";
+                        }
+                        L.config.names[index] = val;
                      });
                     console.log("SET COOKIE_NAMES:");
                     console.log(L.config.names);
-                    var date = new Date();
+                    let date = new Date();
                     date.setTime(date.getTime() + (L.config.cookie_days * 24 * 60 * 60 * 1000));
                     $.cookie("COOKIE_NAMES", L.config.names, { expires: date });
                 },
                 showNames : function() {
                     L._fn.step_names.getNames();
-                    for (var i = 0; i < L.config.count; i++) {
+                    for (let i = 0; i < L.config.count; i++) {
                         $("#step_names #names ul input[type=text]#name" + (i+1)).val(L.config.names[i]);
                     }
                     return true;
                 },
                 getNames : function() {
-                    var tmp = $.cookie("COOKIE_NAMES");
+                    let tmp = $.cookie("COOKIE_NAMES");
                     if (tmp == undefined) {
                         return false;
                     }
@@ -343,9 +347,9 @@
                 addExpenseInputs : function() {
                     $("#step_expenses #expenses ul").remove();
                     $("#step_expenses #expenses").append("<ul></ul>");
-                    var li;
-                    for (var i = 1; i <= L.config.count; i++) {
-                        li = '<li><label>'+$('#step_names #name'+i).val()+'</label></li>';
+                    let li;
+                    for (let i = 1; i <= L.config.count; i++) {
+                        li = '<li><label>'+L.config.names[i]+'</label></li>';
                         li += '<li><input type="number" id="expense'+i+'_1" value="" placeholder="Price 1"/></li>';
                         li += '<li><input type="number" id="expense'+i+'_2" value="" placeholder="Price 2" /></li>';
                         li += '<li><input type="number" id="expense'+i+'_3" value="" placeholder="Price 3" /></li>';
@@ -389,9 +393,9 @@
                     return true;
                 },
                 setExpenseTotal : function() {
-                    var total = 0;
-                    var expense1, expense2, expense3;
-                    for (var i=1; i<=L.config.count; i++) {
+                    let total = 0;
+                    let expense1, expense2, expense3;
+                    for (let i=1; i<=L.config.count; i++) {
                         expense1 = $("#step_expenses #expense"+i+"_1").val();
                         if (expense1 !== undefined && expense1 !== '') {
                             total += parseFloat(expense1);
@@ -425,19 +429,19 @@
                     return true;
                 },
                 getTax : function(money) {
-                    var tax = money * L.config.tax_rate / 100;
+                    let tax = money * L.config.tax_rate / 100;
                     return tax;
                 },
                 setTax : function () {
-                    var expense_total = parseFloat($("#step_tax #expense_total").val());
-                    var tax = expense_total * L.config.tax_rate / 100;
+                    let expense_total = parseFloat($("#step_tax #expense_total").val());
+                    let tax = expense_total * L.config.tax_rate / 100;
                     $("#step_tax #tax").val(L._fn.util.getRoundedNumber(tax, 2));
                     return true;
                 },
                 setTaxTotal : function () {
-                    var expense_total = parseFloat($("#step_tax #expense_total").val());
-                    var tax = parseFloat($("#step_tax #tax").val());
-                    var tax_total = expense_total + tax;
+                    let expense_total = parseFloat($("#step_tax #expense_total").val());
+                    let tax = parseFloat($("#step_tax #tax").val());
+                    let tax_total = expense_total + tax;
                     $("#step_tax #tax_total").val(L._fn.util.getRoundedNumber(tax_total, 2));
                     return true;
                 },
@@ -456,9 +460,9 @@
                     return true;
                 },
                 setTaxRateByTax: function() {
-                    var expense_total = parseFloat($("#step_tax #expense_total").val());
-                    var tax = parseFloat($("#step_tax #tax").val());
-                    var tax_rate = tax / expense_total;
+                    let expense_total = parseFloat($("#step_tax #expense_total").val());
+                    let tax = parseFloat($("#step_tax #tax").val());
+                    let tax_rate = tax / expense_total;
                     tax_rate  = tax_rate * 100;
                     L.config.tax_rate = tax_rate;
                     L._fn.step_tax.setTaxRate();
@@ -498,15 +502,15 @@
                     return true;
                 },
                 setTip : function () {
-                    var tax_total = $("#step_tax #tax_total").val();
-                    var tip = tax_total * L.config.tip_rate / 100;
+                    let tax_total = $("#step_tax #tax_total").val();
+                    let tip = tax_total * L.config.tip_rate / 100;
                     $("#step_tip #tip").val(L._fn.util.getRoundedNumber(tip, 2));
                     return true;
                 },
                 setTipTotal : function () {
-                    var tax_total = parseFloat($("#step_tax #tax_total").val());
-                    var tip = parseFloat($("#step_tip #tip").val());
-                    var tip_total = tax_total + tip;
+                    let tax_total = parseFloat($("#step_tax #tax_total").val());
+                    let tip = parseFloat($("#step_tip #tip").val());
+                    let tip_total = tax_total + tip;
                     $("#step_tip #tip_total").val(L._fn.util.getRoundedNumber(tip_total, 2));
                     return true;
                 },
@@ -527,15 +531,15 @@
                     return true;
                 },
                 changeTipTotal: function() {
-                    var tax_total = parseFloat($("#step_tax #tax_total").val());
-                    var tip_total = parseFloat($("#step_tip #tip_total").val());
+                    let tax_total = parseFloat($("#step_tax #tax_total").val());
+                    let tip_total = parseFloat($("#step_tip #tip_total").val());
                     $("#step_tip #tip").val(L._fn.util.getRoundedNumber(tip_total - tax_total, 2));
                     L._fn.step_tip.changeTip();
                     return true;
                 },
                 setTipRateByTip: function() {
-                    var tax_total = parseFloat($("#step_tax #tax_total").val());
-                    var tip = parseFloat($("#step_tip #tip").val());
+                    let tax_total = parseFloat($("#step_tax #tax_total").val());
+                    let tip = parseFloat($("#step_tip #tip").val());
                     L.config.tip_rate = tip / tax_total * 100;
                     L._fn.step_tip.setTipRate();
                     return true;
@@ -561,23 +565,23 @@
                 addResultInputs: function() {
                     $("#step_result #result ul").remove();
                     $("#step_result #result").append("<ul></ul>");
-                    var name = '';
-                    for (var i = 1; i <= L.config.count; i++) {
+                    let name = '';
+                    for (let i = 1; i <= L.config.count; i++) {
                         name = $("#step_names #name"+i).val();
                         $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" id="result'+i+'" value="" /></li>');
                     }
                 },
                 divide : function() {
                     // tip
-                    var cur_tip = $("#step_tip #tip").val();
-                    var tip_each = cur_tip / L.config.count;
-                    var shared_each = L.config.shared / L.config.count;
+                    let cur_tip = $("#step_tip #tip").val();
+                    let tip_each = cur_tip / L.config.count;
+                    let shared_each = L.config.shared / L.config.count;
                     // each with tax
-                    var total_each = 0;
-                    var expense1, expense2, expense3;
-                    var tax_each;
-                    var total_final = 0;
-                    for (var i=1; i<=L.config.count; i++) {
+                    let total_each = 0;
+                    let expense1, expense2, expense3;
+                    let tax_each;
+                    let total_final = 0;
+                    for (let i=1; i<=L.config.count; i++) {
                         total_each = 0;
                         expense1 = $("#step_expenses #expense"+i+"_1").val();
                         if (expense1 !== undefined && expense1 !== '') {
@@ -599,18 +603,18 @@
                         total_final += total_each;
                     }
 
-                    var tip_total = $("#step_tip #tip_total").val();
-                    var diff = L._fn.util.getRoundedNumber(tip_total - total_final, 2);
+                    let tip_total = $("#step_tip #tip_total").val();
+                    let diff = L._fn.util.getRoundedNumber(tip_total - total_final, 2);
                     if (diff !== 0) {
                         if (Math.abs(diff) < L.config.count * 0.01) {
-                            var ran = 0;
+                            let ran = 0;
                             if (diff > 0) {
-                                for (var i=0.01; i<=diff; i=i+0.01) {
+                                for (let i=0.01; i<=diff; i=i+0.01) {
                                     ran = Math.floor((Math.random() * L.config.count) + 1);
                                     $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 0.01);
                                 }
                             }else {
-                                for (var i=-0.01; i>=diff; i=i-0.01) {
+                                for (let i=-0.01; i>=diff; i=i-0.01) {
                                     ran = Math.floor((Math.random() * L.config.count) + 1);
                                     $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) - 0.01);
                                 }
