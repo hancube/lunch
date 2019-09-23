@@ -132,12 +132,12 @@
     <script>
     let L = {
         config: {
-            count: 0,
-            names: [],
-            shared: 0,
-            tax_rate: 8.875,
-            tip_rate: 15,
-            cookie_days: 30
+            COOKIE_COUNT: "COOKIE_COUNT",
+            COOKIE_NAMES: "COOKIE_NAMES",
+            DEFAULT_TAX_RATE: 8.875,
+            DEFAULT_TIP_RATE: 15,
+            COOKIE_EXPIRATION: 30,
+            EXPENSE_INPUTS: 3
         },
         init : function() {
             L.event();
@@ -145,15 +145,6 @@
 
         },
         event : function() {
-            $("#step_welcome #next").click(function (e) {
-                L._fn.swichStep();
-                L._fn.step_welcome.clickNext();
-            });
-            $("#step_welcome #go_venmo").click(function (e) {
-                L._fn.swichStep();
-                L._fn.step_welcome.goVenmo();
-            });
-
             $("#step_count #next").click(function (e) {
                 L._fn.swichStep();
                 L._fn.step_count.clickNext();
@@ -189,11 +180,11 @@
                 L._fn.swichStep();
                 L._fn.step_tax.clickBack();
             });
-            $("#step_tax #tax_rate").blur(function (e) {
-                L._fn.step_tax.changeTaxRate();
+            $("#step_tax #tax_rate").change(function (e) {
+                L._fn.step_tax.eventTaxRateChanged();
             });
-            $("#step_tax #tax").blur(function (e) {
-                L._fn.step_tax.changeTax();
+            $("#step_tax #tax").change(function (e) {
+                L._fn.step_tax.eventTaxChanged();
             });
             $("#step_tip #next").click(function (e) {
                 L._fn.swichStep();
@@ -204,13 +195,13 @@
                 L._fn.step_tip.clickBack();
             });
             $("#step_tip #tip_rate").change(function (e) {
-                L._fn.step_tip.changeTipRate();
+                L._fn.step_tip.eventTipRateChanged();
             });
-            $("#step_tip #tip").blur(function (e) {
-                L._fn.step_tip.changeTip();
+            $("#step_tip #tip").change(function (e) {
+                L._fn.step_tip.eventTipChanged();
             });
-            $("#step_tip #tip_total").blur(function (e) {
-                L._fn.step_tip.changeTipTotal();
+            $("#step_tip #tip_total").change(function (e) {
+                L._fn.step_tip.eventTipTotalChanged();
             });
             $("#step_result #start_over").click(function (e) {
                 L._fn.swichStep();
@@ -222,100 +213,94 @@
             });
         },
         _fn : {
+            /*
+             * Rules:
+             * - get/set funcitons without specific object are from/to form elements
+             * 
+             */
             swichStep: function() {
                 window.scrollTo(0,0);
             },
-            step_welcome: {
-                clickNext : function() {
-                    L._fn.step_welcome.showNext();
-                },
-                showNext : function() {
-                    $("#step_welcome").hide();
-                    $("#step_count").show();
-                },
-                goVenmo : function() {
-                    $("#step_welcome").hide();
-                    $("#step_count").show();
+            toFixed: function(num, point) {
+                var times = 1;
+                for (var i=1; i<=point; i++){
+                    times = times * 10;
                 }
+                return Math.round(num * times) / times;
             },
             step_count: {
                 init: function() {
-                    L._fn.step_count.showCount();
+                    L._fn.step_count.setCountFromCookie();
                 },
-                showCount : function() {
-                    L._fn.step_count.getCount();
-                    $("#step_count #count").val(L.config.count);
+                getCookieCount : function() {
+                    return $.cookie(L.config.COOKIE_COUNT);
                 },
-                setCount : function() {
+                setCookieCount : function(count) {
                     let date = new Date();
-                    date.setTime(date.getTime() + (L.config.cookie_days * 24 * 60 * 60 * 1000));
-                    $.cookie("COOKIE_COUNT", L.config.count, { expires: date });
-                    console.log("SET COOKIE_COUNT: " + L.config.count);
+                    date.setTime(date.getTime() + (L.config.COOKIE_EXPIRATION * 24 * 60 * 60 * 1000));
+                    $.cookie(L.config.COOKIE_COUNT, count, { expires: date });
+                },
+                setCountFromCookie : function() {
+                    L._fn.step_count.setCount(L._fn.step_count.getCookieCount());
                 },
                 getCount : function() {
-                    L.config.count = $.cookie("COOKIE_COUNT");
-                    console.log("GET COOKIE_COUNT: " + L.config.count);
-                    return true;
+                    return $("#step_count #count").val();
+                },
+                setCount : function(count) {
+                    return $("#step_count #count").val(count);
                 },
                 clickNext : function() {
-                    L.config.count = $("#step_count #count").val();
-                    L._fn.step_count.setCount();
+                    L._fn.step_count.setCookieCount(L._fn.step_count.getCount());
                     L._fn.step_names.init();
                     L._fn.step_count.showNext();
                 },
                 showNext : function() {
-                    $('#step_count #input').prop('readonly', true);
                     $("#step_count").hide();
                     $("#step_names").show();
                 },
-                clickBack : function() {
-                    $("#step_count").hide();
-                    $("#step_welcome").show();
-                }
             },
             step_names: {
                 init: function () {
-                    L._fn.step_names.addNameInputs();
-                    L._fn.step_names.showNames();
+                    L._fn.step_names.generateNameInputs();
+                    L._fn.step_names.setNames(L._fn.step_names.getNamesFromCookie());
                 },
-                addNameInputs : function() {
+                generateNameInputs : function() {
                     $("#step_names #names ul").remove();
                     $("#step_names #names").append("<ul></ul>");
-                    for (let i = 1; i <= L.config.count; i++) {
+                    for (let i = 1; i <= L._fn.step_count.getCount(); i++) {
                         $('#step_names #names ul').append('<li><input type="text" id="name'+i+'" value="" /></li>');
                     }
                 },
-                setNames : function() {
-                    L.config.names = [];
-                    $("#step_names #names ul li input[type=text]").each(function(index) {
-                        L.config.names[index] = $(this).val();
-                     });
-                    console.log("SET COOKIE_NAMES:");
-                    console.log(L.config.names);
-                    let date = new Date();
-                    date.setTime(date.getTime() + (L.config.cookie_days * 24 * 60 * 60 * 1000));
-                    $.cookie("COOKIE_NAMES", L.config.names, { expires: date });
-                },
-                showNames : function() {
-                    L._fn.step_names.getNames();
-                    for (let i = 0; i < L.config.count; i++) {
-                        $("#step_names #names ul input[type=text]#name" + (i+1)).val(L.config.names[i]);
-                    }
-                    return true;
-                },
-                getNames : function() {
-                    let tmp = $.cookie("COOKIE_NAMES");
+                getNamesFromCookie : function() {
+                    let tmp = $.cookie(L.config.COOKIE_NAMES);
                     if (tmp == undefined) {
                         return false;
                     }
-
-                    L.config.names = tmp.split(',');
-                    console.log("GET COOKIE_NAMES:");
-                    console.log(L.config.names);
-                    return true;
+                    return tmp.split(',');
+                },
+                setNamesToCookie : function(names) {
+                    let date = new Date();
+                    date.setTime(date.getTime() + (L.config.COOKIE_EXPIRATION * 24 * 60 * 60 * 1000));
+                    $.cookie(L.config.COOKIE_NAMES, names, { expires: date });
+                },
+                getName: function(index) {
+                    let names = L._fn.step_names.getNames();
+                    return names[index];
+                },
+                getNames: function() {
+                    var names = []
+                    $("#step_names #names ul li input[type=text]").each(function(index) {
+                        names[index] = $(this).val();
+                    });
+                    return names;
+                },
+                setNames: function(names) {
+                    for (let i = 0; i < names.length; i++) {
+                        $("#step_names #names ul input[type=text]#name" + (i+1)).val(names[i]);
+                    }
                 },
                 clickNext : function() {
-                    L._fn.step_names.setNames();
+                    L._fn.step_names.setNamesToCookie(L._fn.step_names.getNames());
                     L._fn.step_expenses.init();
                     L._fn.step_names.showNext();
                 },
@@ -330,28 +315,58 @@
             },
             step_expenses: {
                 init: function () {
-                    L._fn.step_expenses.addExpenseInputs();
+                    L._fn.step_expenses.generateExpenseInputs();
                 },
-                addExpenseInputs : function() {
+                generateExpenseInputs : function() {
                     $("#step_expenses #expenses ul").remove();
-                    $("#step_expenses #expenses").append("<ul></ul>");
                     let li;
-                    for (let i = 1; i <= L.config.count; i++) {
+                    // Indivisual
+                    for (let i = 1; i <= L._fn.step_count.getCount(); i++) {
+                        $("#step_expenses #expenses").append('<ul id="indivisual'+i+'"></ul>');
                         li = '<li><label>'+$('#step_names #name'+i).val()+'</label></li>';
-                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_1" value="" placeholder="Price 1"/></li>';
-                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_2" value="" placeholder="Price 2" /></li>';
-                        li += '<li><input type="number" step="0.01" min="0" id="expense'+i+'_3" value="" placeholder="Price 3" /></li>';
-                        $('#step_expenses ul').append(li);
+                        for (let j = 1; j <= L.config.EXPENSE_INPUTS; j++) {
+                            li += '<li><input type="number" step="0.01" min="0" class="expense" value="" placeholder="Price '+j+'"/></li>';
+                        }
+                        $('#step_expenses #expenses #indivisual'+i).append(li);
                     }
                     // Shared
+                    $("#step_expenses #expenses").append('<ul id="shared"></ul>');
                     li = '<li><label>Shared</label></li>';
-                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_1" value="" placeholder="Price 1"/></li>';
-                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_2" value="" placeholder="Price 2" /></li>';
-                    li += '<li><input type="number" step="0.01" min="0" id="shared'+'_3" value="" placeholder="Price 3" /></li>';
-                    $('#step_expenses ul').append(li);
+                    for (let j = 1; j <= L.config.EXPENSE_INPUTS; j++) {
+                        li += '<li><input type="number" step="0.01" min="0" class="expense shared" value="" placeholder="Price '+j+'"/></li>';
+                    }
+                    $('#step_expenses #expenses #shared').append(li);
 
                 },
+                sumExpenses: function() {
+                    var total = 0;
+                    $("#step_expenses #expenses .expense").each(function(index) {
+                        if($(this).val() != ""){
+                            total += parseFloat($(this).val());
+                        }
+                    });
+                    return total;         
+                },
+                sumIndivisualExpenses: function(i) {
+                    var total = 0;
+                    $('#step_expenses #expenses #indivisual'+i+' .expense').each(function(index) {
+                        if($(this).val() != ""){
+                            total += parseFloat($(this).val());
+                        }
+                    });
+                    return total;         
+                },
+                sumSharedExpenses: function() {
+                    var total = 0;
+                    $("#step_expenses #expenses #expense .shared").each(function(index) {
+                        if($(this).val() != ""){
+                            total += parseFloat($(this).val());
+                        }
+                    });
+                    return total;         
+                },                
                 clickNext : function() {
+                    L._fn.step_expenses.showNext();
                     L._fn.step_tax.init();
                     L._fn.step_expenses.showNext();
                 },
@@ -366,97 +381,69 @@
             },
             step_tax: {
                 init: function () {
-                    L._fn.step_tax.setTaxRate();
-                    L._fn.step_tax.setExpenseTotal();
-                    L._fn.step_tax.setTax();
-                    L._fn.step_tax.setTaxTotal();
-                    return true;
+                    let expense_total = L._fn.step_expenses.sumExpenses();
+                    L._fn.step_tax.setExpenseTotal(expense_total);
+                    L._fn.step_tax.setTaxRate(L.config.DEFAULT_TAX_RATE);
+                    L._fn.step_tax.eventTaxRateChanged();
                 },
-                setTaxRate : function() {
-                    $("#step_tax #tax_rate").val(L.config.tax_rate);
-                    return true;
+                getTaxRate: function() {
+                    return parseFloat($("#step_tax #tax_rate").val());
                 },
-                getTaxRate : function() {
-                    L.config.tax_rate = $("#step_tax #tax_rate").val();
-                    return true;
+                setTaxRate: function(tax_rate) {
+                    $("#step_tax #tax_rate").val(L._fn.toFixed(tax_rate, 3));
                 },
-                setExpenseTotal : function() {
-                    let total = 0;
-                    let expense1, expense2, expense3;
-                    for (let i=1; i<=L.config.count; i++) {
-                        expense1 = $("#step_expenses #expense"+i+"_1").val();
-                        if (expense1 !== undefined && expense1 !== '') {
-                            total += parseFloat(expense1);
-                        }
-                        expense2= $("#step_expenses #expense"+i+"_2").val();
-                        if (expense2 !== undefined && expense2 !== '') {
-                            total += parseFloat(expense2);
-                        }
-                        expense3 = $("#step_expenses #expense"+i+"_3").val();
-                        if (expense3 !== undefined && expense3 !== '') {
-                            total += parseFloat(expense3);
-                        }
-                    }
-                    // Shared
-                    L.config.shared = 0;
-                    expense1 = $("#step_expenses #shared_1").val();
-                    if (expense1 !== undefined && expense1 !== '') {
-                        L.config.shared += parseFloat(expense1);
-                    }
-                    expense2 = $("#step_expenses #shared_2").val();
-                    if (expense2 !== undefined && expense2 !== '') {
-                        L.config.shared += parseFloat(expense2);
-                    }
-                    expense3 = $("#step_expenses #shared_3").val();
-                    if (expense3 !== undefined && expense3 !== '') {
-                        L.config.shared += parseFloat(expense3);
-                    }
-                    total += parseFloat(L.config.shared);
-
-                    $("#step_tax #expense_total").val(total.toFixed(2));
-                    return true;
+                getExpenseTotal: function() {
+                    return parseFloat($("#step_tax #expense_total").val());
                 },
-                getTax : function(money) {
-                    let tax = money * L.config.tax_rate / 100;
+                setExpenseTotal: function(expense_total) {
+                    $("#step_tax #expense_total").val(L._fn.toFixed(expense_total, 2));
+                },
+                getTax: function() {
+                    return parseFloat($("#step_tax #tax").val());
+                },
+                getTaxByMoney: function(money) {
+                    let tax = 0;
+                    if (money * L.config.DEFAULT_TAX_RATE > 0) {
+                        tax = money * L.config.DEFAULT_TAX_RATE / 100;
+                    }
                     return tax;
                 },
-                setTax : function () {
-                    let expense_total = parseFloat($("#step_tax #expense_total").val());
-                    let tax = expense_total * L.config.tax_rate / 100;
-                    $("#step_tax #tax").val(tax.toFixed(2));
-                    return true;
+                setTax: function(tax) {
+                    $("#step_tax #tax").val(L._fn.toFixed(tax, 2));
                 },
-                setTaxTotal : function () {
-                    let expense_total = parseFloat($("#step_tax #expense_total").val());
-                    let tax = parseFloat($("#step_tax #tax").val());
-                    let tax_total = expense_total + tax;
-                    $("#step_tax #tax_total").val(tax_total.toFixed(2));
-                    return true;
+                getTaxTotal: function() {
+                    return parseFloat($("#step_tax #tax_total").val());
                 },
-                changeTaxRate: function() {
-                    L._fn.step_tax.getTaxRate();
-                    L._fn.step_tax.setTax();
-                    L._fn.step_tax.setTaxTotal();
-                    L._fn.step_expenses.showNext();
-                    return true;
+                setTaxTotal: function(tax_total) {
+                    $("#step_tax #tax_total").val(L._fn.toFixed(tax_total, 2));
                 },
-                changeTax: function() {
-                    if (parseFloat($("#step_tax #tax").val()) > 0) {
-                        L._fn.step_tax.setTaxRateByTax();
-                        L._fn.step_tax.setTax();
-                        L._fn.step_tax.setTaxTotal();
-                        L._fn.step_expenses.showNext();
+                getTaxByTaxRate: function (tax_rate) {
+                    let expense_total = L._fn.step_tax.getExpenseTotal();
+                    let tax = 0;
+                    if (expense_total * tax_rate > 0) {
+                        tax = expense_total * tax_rate / 100;;
                     }
-                    return true;
+                    return tax;
                 },
-                setTaxRateByTax: function() {
-                    let expense_total = parseFloat($("#step_tax #expense_total").val());
-                    let tax = parseFloat($("#step_tax #tax").val());
-                    let tax_rate = tax / expense_total;
-                    tax_rate  = tax_rate * 100;
-                    L.config.tax_rate = tax_rate.toFixed(3);
-                    L._fn.step_tax.setTaxRate();
-                    return true;
+                getTaxRateByTax: function(tax) {
+                    let expense_total = L._fn.step_tax.getExpenseTotal();
+                    let tax_rate = L._fn.step_tax.getTaxRate();
+                    if (expense_total > 0) {
+                        tax_rate = tax / expense_total * 100;
+                    }
+                    return tax_rate;
+                },
+                eventTaxRateChanged: function() {
+                    let tax_rate = L._fn.step_tax.getTaxRate();
+                    let tax = L._fn.step_tax.getTaxByTaxRate(tax_rate);
+                    L._fn.step_tax.setTax(tax);
+                    L._fn.step_tax.setTaxTotal(L._fn.step_tax.getExpenseTotal() + tax);
+                },
+                eventTaxChanged: function() {
+                    let tax = L._fn.step_tax.getTax();
+                    let tax_rate = L._fn.step_tax.getTaxRateByTax(tax);
+                    L._fn.step_tax.setTaxRate(tax_rate);
+                    L._fn.step_tax.setTaxTotal(L._fn.step_tax.getExpenseTotal() + tax);
                 },
                 clickNext : function() {
                     L._fn.step_tip.init();
@@ -473,66 +460,68 @@
             },
             step_tip: {
                 init: function () {
-                    L._fn.step_tip.setTipRate();
-                    L._fn.step_tip.setTipRateText();
-                    L._fn.step_tip.setTip();
-                    L._fn.step_tip.setTipTotal();
-                    return true;
-                },
-                setTipRate : function() {
-                    $("#step_tip #tip_rate").val(L.config.tip_rate.toFixed(2));
-                    return true;
-                },
-                setTipRateText : function() {
-                    $("#step_tip #tip_rate_text").text(L.config.tip_rate);
-                    return true;
+                    L._fn.step_tip.setTipRate(L.config.DEFAULT_TIP_RATE);
+                    L._fn.step_tip.eventTipRateChanged();
                 },
                 getTipRate : function() {
-                    L.config.tip_rate = parseFloat($("#step_tip #tip_rate").val());
-                    return true;
+                    return parseInt($("#step_tip #tip_rate").val());
                 },
-                setTip : function () {
-                    let tax_total = $("#step_tax #tax_total").val();
-                    let tip = tax_total * L.config.tip_rate / 100;
-                    $("#step_tip #tip").val(tip.toFixed(2));
-                    return true;
+                setTipRate : function(tip_rate) {
+                    $("#step_tip #tip_rate").val(tip_rate.toFixed(0));
                 },
-                setTipTotal : function () {
-                    let tax_total = parseFloat($("#step_tax #tax_total").val());
-                    let tip = parseFloat($("#step_tip #tip").val());
-                    let tip_total = tax_total + tip;
-                    $("#step_tip #tip_total").val(tip_total.toFixed(2));
-                    return true;
+                setTipRateText: function(tip_rate) {
+                    $("#step_tip #tip_rate_text").text(tip_rate.toFixed(0));
                 },
-                changeTipRate: function() {
-                    L._fn.step_tip.getTipRate();
-                    L._fn.step_tip.setTipRateText();
-                    L._fn.step_tip.setTip();
-                    L._fn.step_tip.setTipTotal();
-                    L._fn.step_tax.showNext();
-                    return true;
+                getTip: function () {
+                    return parseFloat($("#step_tip #tip").val());
                 },
-                changeTip: function() {
-                    L._fn.step_tip.setTipRateByTip();
-                    L._fn.step_tip.setTipRateText();
-                    L._fn.step_tip.setTip();
-                    L._fn.step_tip.setTipTotal();
-                    L._fn.step_tax.showNext();
-                    return true;
+                setTip: function (tip) {
+                    $("#step_tip #tip").val(L._fn.toFixed(tip, 2));
                 },
-                changeTipTotal: function() {
-                    let tax_total = parseFloat($("#step_tax #tax_total").val());
-                    let tip_total = parseFloat($("#step_tip #tip_total").val());
-                    $("#step_tip #tip").val((tip_total - tax_total).toFixed(2));
-                    L._fn.step_tip.changeTip();
-                    return true;
+                getTipTotal: function () {
+                    return parseFloat($("#step_tip #tip_total").val());
                 },
-                setTipRateByTip: function() {
-                    let tax_total = parseFloat($("#step_tax #tax_total").val());
-                    let tip = parseFloat($("#step_tip #tip").val());
-                    L.config.tip_rate = tip / tax_total * 100;
-                    L._fn.step_tip.setTipRate();
-                    return true;
+                setTipTotal: function (tip_total) {
+                    $("#step_tip #tip_total").val(L._fn.toFixed(tip_total, 2));
+                },
+                getTipbyTipRate : function (tip_rate) {
+                    let tax_total = L._fn.step_tax.getTaxTotal();
+                    let tip = 0;
+                    tip = tax_total * tip_rate / 100;
+                    return tip;
+                },
+                getTipRatebyTip : function (tip) {
+                    let tax_total = L._fn.step_tax.getTaxTotal();
+                    let tip_rate = L._fn.step_tip.getTipRate();
+                    if (tax_total > 0) {
+                        tip_rate = tip / tax_total * 100;
+                    }
+                    return tip_rate;
+                },
+                eventTipRateChanged: function() {
+                    let tip_rate = L._fn.step_tip.getTipRate();
+                    let tip = L._fn.step_tip.getTipbyTipRate(tip_rate);
+                    let tip_total = L._fn.step_tax.getTaxTotal() + tip;
+                    L._fn.step_tip.setTip(tip);
+                    L._fn.step_tip.setTipTotal(tip_total);
+                    L._fn.step_tip.setTipRateText(tip_rate);
+                },
+                eventTipChanged: function() {
+                    let tip = L._fn.step_tip.getTip();
+                    let tip_rate = L._fn.step_tip.getTipRatebyTip(tip);
+                    let tip_total = L._fn.step_tax.getTaxTotal() + tip;
+                    L._fn.step_tip.setTipRate(tip_rate);
+                    L._fn.step_tip.setTipRateText(tip_rate);
+                    L._fn.step_tip.setTipTotal(tip_total);
+                },
+                eventTipTotalChanged: function() {
+                    let tax_total = L._fn.step_tax.getTaxTotal();
+                    let tip_total = L._fn.step_tip.getTipTotal();
+                    let tip = tip_total - tax_total;
+                    let tip_rate = L._fn.step_tip.getTipRatebyTip(tip);
+                    L._fn.step_tip.setTip(tip);
+                    L._fn.step_tip.setTipRate(tip_rate);
+                    L._fn.step_tip.setTipRateText(tip_rate);
                 },
                 clickNext : function() {
                     L._fn.step_result.init();
@@ -549,64 +538,65 @@
             },
             step_result : {
                 init : function() {
-                    L._fn.step_result.addResultInputs();
+                    L._fn.step_result.generateResultInputs();
                     L._fn.step_result.divide();
                 },
-                addResultInputs: function() {
+                generateResultInputs: function() {
                     $("#step_result #result ul").remove();
                     $("#step_result #result").append("<ul></ul>");
                     let name = '';
-                    for (let i = 1; i <= L.config.count; i++) {
+                    for (let i = 1; i <= L._fn.step_count.getCount(); i++) {
                         name = $("#step_names #name"+i).val();
                         $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" step="0.01" min="0" id="result'+i+'" value="" /></li>');
                     }
                 },
+                getResult: function(i) {
+                    return parseFloat($("#step_result #result"+i).val());
+                },
+                setResult: function(i, amount) {
+                    $("#step_result #result"+i).val(L._fn.toFixed(amount, 2));
+                },
                 divide : function() {
-                    // tip
-                    let cur_tip = $("#step_tip #tip").val();
-                    let tip_each = cur_tip / L.config.count;
-                    let shared_each = L.config.shared / L.config.count;
-                    // each with tax
-                    let total_each = 0;
-                    let expense1, expense2, expense3;
+                    // basic info
+                    let tip = L._fn.step_tip.getTip();
+                    let tip_total = L._fn.step_tip.getTipTotal();
+                    let count = L._fn.step_count.getCount();
+                    let shared_each = L._fn.step_expenses.sumSharedExpenses() / count;
+
+                    // indivisual tip
+                    let tip_each = tip / count;
+
+                    // indivisual total
+                    let expense_each = 0;
                     let tax_each;
+                    let total_each = 0;
                     let total_final = 0;
-                    for (let i=1; i<=L.config.count; i++) {
-                        total_each = 0;
-                        expense1 = $("#step_expenses #expense"+i+"_1").val();
-                        if (expense1 !== undefined && expense1 !== '') {
-                            total_each += parseFloat(expense1);
-                        }
-                        expense2= $("#step_expenses #expense"+i+"_2").val();
-                        if (expense2 !== undefined && expense2 !== '') {
-                            total_each += parseFloat(expense2);
-                        }
-                        expense3 = $("#step_expenses #expense"+i+"_3").val();
-                        if (expense3 !== undefined && expense3 !== '') {
-                            total_each += parseFloat(expense3);
-                        }
-                        total_each += shared_each;
-                        tax_each = L._fn.step_tax.getTax(total_each);
-                        total_each = total_each + tax_each + tip_each;
-                        total_each = total_each.toFixed(2);
-                        $("#step_result #result"+i).val(total_each);
+                    for (let i=1; i<=count; i++) {
+                        expense_each = L._fn.step_expenses.sumIndivisualExpenses(i);
+                        tax_each = L._fn.step_tax.getTaxByMoney(expense_each);
+                        total_each = expense_each + tax_each + tip_each + shared_each;
+                        L._fn.step_result.setResult(i, total_each);
                         total_final += total_each;
                     }
 
-                    let tip_total = $("#step_tip #tip_total").val();
-                    let diff = (tip_total - total_final).toFixed(2);
+
+                    // adjust difference
+                    let diff = tip_total - total_final;
+                    let amount;
                     if (diff !== 0) {
-                        if (Math.abs(diff) < L.config.count * 0.01) {
+                        if (Math.abs(diff) < L._fn.step_count.getCount() * 0.01) {
                             let ran = 0;
                             if (diff > 0) {
-                                for (let i=0.01; i<=diff; i=i+0.01) {
-                                    ran = Math.floor((Math.random() * L.config.count) + 1);
-                                    $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) + 0.01);
+                                for (let i = 0.01; i <= diff; i = i + 0.01) {
+                                    ran = Math.floor((Math.random() * count) + 1);
+                                    amount = L._fn.step_result.getResult(ran);
+                                    L._fn.step_result.setResult(ran, amount + 0.01)
                                 }
                             }else {
-                                for (let i=-0.01; i>=diff; i=i-0.01) {
-                                    ran = Math.floor((Math.random() * L.config.count) + 1);
-                                    $("#step_result #result"+ran).val(parseFloat($("#step_result #result"+ran).val()) - 0.01);
+                                for (let i = -0.01; i >= diff; i = i - 0.01) {
+                                    ran = Math.floor((Math.random() * count) + 1);
+                                    amount = L._fn.step_result.getResult(ran);
+                                    L._fn.step_result.setResult(ran, amount - 0.01)
                                 }
                             }
                         }
@@ -630,23 +620,10 @@
 <body>
 <div class="bg">
 <div class="center">
-    <div id="step_welcome" class="step">
-        <h1>Welcome</h1>
-        <div>
-            Just Calculate!
-            <input type="button" value="Start" id="next" />
-        </div>
-        <div>
-            Start with Venmo!
-            <input type="button" value="Go Venmo" id="go_venmo" />
-        </div>
-    </div>
-    
     <div id="step_count" class="step">
         <h1>How Many People?</h1>
         <input type="number" min="0" id="count" value="" />
         <div id="buttons">
-            <input type="button" value="Back" id="back" />
             <input type="button" value="Go" id="next" />
         </div>
     </div>
@@ -684,7 +661,7 @@
     <div id="step_tip" class="step">
         <h1>Tip</h1>
         <ul>
-            <li><label>Tip Rate(<span id="tip_rate_text"></span>%)</label> <input type="range" id="tip_rate" value="" min="0" max="30"/></li>
+            <li><label>Tip Rate(<span id="tip_rate_text"></span>%)</label> <input type="range" id="tip_rate" value="" min="0" max="50"/></li>
             <li><label>Tip </label> <input type="number" step="0.01" min="0" id="tip" value="" /></li>
             <li><label class="b">Tip Total</label> <input type="number" step="0.01" min="0" id="tip_total" value="" /></li>
         </ul>
