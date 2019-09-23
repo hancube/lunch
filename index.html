@@ -216,7 +216,6 @@
             /*
              * Rules:
              * - get/set funcitons without specific object are from/to form elements
-             * 
              */
             swichStep: function() {
                 window.scrollTo(0,0);
@@ -358,7 +357,7 @@
                 },
                 sumSharedExpenses: function() {
                     var total = 0;
-                    $("#step_expenses #expenses #expense .shared").each(function(index) {
+                    $("#step_expenses #expenses .shared").each(function(index) {
                         if($(this).val() != ""){
                             total += parseFloat($(this).val());
                         }
@@ -475,6 +474,9 @@
                 getTip: function () {
                     return parseFloat($("#step_tip #tip").val());
                 },
+                getTip: function (amount) {
+                    return parseFloat($("#step_tip #tip").val());
+                },
                 setTip: function (tip) {
                     $("#step_tip #tip").val(L._fn.toFixed(tip, 2));
                 },
@@ -490,7 +492,14 @@
                     tip = tax_total * tip_rate / 100;
                     return tip;
                 },
+                getTipByMoney: function(amount) {
+                    let tip_rate = L._fn.step_tip.getTipRate();
+                    let tip = 0;
+                    tip = amount * tip_rate / 100;
+                    return tip;
+                },
                 getTipRatebyTip : function (tip) {
+                    // init tip_rate
                     let tax_total = L._fn.step_tax.getTaxTotal();
                     let tip_rate = L._fn.step_tip.getTipRate();
                     if (tax_total > 0) {
@@ -547,7 +556,7 @@
                     let name = '';
                     for (let i = 1; i <= L._fn.step_count.getCount(); i++) {
                         name = $("#step_names #name"+i).val();
-                        $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" step="0.01" min="0" id="result'+i+'" value="" /></li>');
+                        $('#step_result #result ul').append('<li><label>'+name+'</label> <input type="number" step="0.01" min="0" id="result'+i+'" class="r" value="" readonly/></li>');
                     }
                 },
                 getResult: function(i) {
@@ -557,30 +566,33 @@
                     $("#step_result #result"+i).val(L._fn.toFixed(amount, 2));
                 },
                 divide : function() {
-                    // basic info
-                    let tip = L._fn.step_tip.getTip();
-                    let tip_total = L._fn.step_tip.getTipTotal();
+                    // calculate indivisual total
                     let count = L._fn.step_count.getCount();
-                    let shared_each = L._fn.step_expenses.sumSharedExpenses() / count;
-
-                    // indivisual tip
-                    let tip_each = tip / count;
-
-                    // indivisual total
+                    let shared_total = L._fn.step_expenses.sumSharedExpenses();
+                    let shared_each = shared_total / count;
                     let expense_each = 0;
-                    let tax_each;
-                    let total_each = 0;
+                    let tip_each = 0;
+                    let tap_each = 0;
                     let total_final = 0;
+
                     for (let i=1; i<=count; i++) {
+                        let total_each = shared_each;
+
                         expense_each = L._fn.step_expenses.sumIndivisualExpenses(i);
-                        tax_each = L._fn.step_tax.getTaxByMoney(expense_each);
-                        total_each = expense_each + tax_each + tip_each + shared_each;
+                        total_each += expense_each;
+
+                        tax_each = L._fn.step_tax.getTaxByMoney(total_each);
+                        total_each += tax_each;
+
+                        tip_each = L._fn.step_tip.getTipByMoney(total_each);
+                        total_each += tip_each;
+
                         L._fn.step_result.setResult(i, total_each);
                         total_final += total_each;
                     }
 
-
                     // adjust difference
+                    let tip_total = L._fn.step_tip.getTipTotal(); // tip_total is the final total amount of all
                     let diff = tip_total - total_final;
                     let amount;
                     if (diff !== 0) {
